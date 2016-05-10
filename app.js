@@ -16,17 +16,26 @@
 
 'use strict';
 
-var express  = require('express'),
-  app        = express(),
-  request    = require('request'),
-  bluemix    = require('./config/bluemix'),
-  extend     = require('util')._extend;
+var express = require('express'),
+  app = express(),
+  request = require('request'),
+  bluemix = require('./config/bluemix'),
+  extend = require('util')._extend;
 
 // Bootstrap application settings
 require('./config/express')(app);
 
+// Read user-defined secrets
+var allCredentials = {};
+try {
+  allCredentials = require('./secrets.json');
+} catch (e) {
+  console.log('No local secrets were found');
+  allCredentials = {};
+}
+
 // if bluemix credentials exists, then override local
-var credentials =  extend({
+var credentials = extend({
   url: 'https://gateway.watsonplatform.net/dialog/api',
   username: '<username>',
   password: '<password>'
@@ -36,7 +45,7 @@ if (credentials.url.indexOf('/api') > 0)
   credentials.url = credentials.url.substring(0, credentials.url.indexOf('/api'));
 
 // HTTP proxy to the API
-app.use('/proxy', function(req, res) {
+app.use('/proxy', function (req, res) {
   var newUrl = credentials.url + req.url;
   req.pipe(request({
     url: newUrl,
@@ -45,19 +54,22 @@ app.use('/proxy', function(req, res) {
       pass: credentials.password,
       sendImmediately: true
     }
-  }, function(error){
+  }, function (error) {
     if (error)
-      res.status(500).json({code: 500, error: errorMessage});
+      res.status(500).json({
+        code: 500,
+        error: errorMessage
+      });
   })).pipe(res);
 });
 
 // render index page
-app.get('/', function(req, res) {
+app.get('/', function (req, res) {
   res.render('index');
 });
 
 // catch 404 and forward to error handler
-app.use(function(req, res, next) {
+app.use(function (req, res, next) {
   var err = new Error('Not Found');
   err.code = 404;
   err.message = 'Not Found';
@@ -68,7 +80,7 @@ app.use(function(req, res, next) {
 var errorMessage = 'There was a problem with the request, please try again';
 
 // non 404 error handler
-app.use(function(err, req, res, next) {
+app.use(function (err, req, res, next) {
   var error = {
     code: err.code || 500,
     error: err.message || err.error || errorMessage
