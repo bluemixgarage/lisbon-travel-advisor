@@ -3,7 +3,7 @@ doctype html
 html(lang='en')
   head
     block title
-      title (Very simple) Lisbon Travel Advisor
+      title Dialog Tool
     meta(charset='utf-8')
     meta(http-equiv='X-UA-Compatible', content='IE=edge')
     meta(name='viewport', content='width=device-width, initial-scale=1')
@@ -21,14 +21,21 @@ html(lang='en')
         div.row.top-nav
           div.container
             h3.heading.left IBM 
-              span.text-right Nice Bluemix Garage
+              span.text-right Watson Developer Cloud
         div.row.header
           div.container
             div.avatar.img-container.col-lg-2.col-md-2.col-sm-2.hidden-xs
-              img.service-icon(src='/images/lisbon.png')
+              img.service-icon(src='/images/app.png')
             div.col-lg-10.col-md-10.col-sm-10.dialog-description
-              h2.service-title (Very simple) Lisbon Travel Advisor
-              p Sample app to showcase Bluemix Watson services 
+              h1.service-title Dialog Tool
+              p Tool to create, manage, and interact with dialogs for the IBM Watson Dialog Service 
+              div.resource
+                img.link-icon(src='/images/link.svg')
+                strong Resources:
+              div.resource-item-container
+                a.resource-item(href='http://www.ibm.com/smarterplanet/us/en/ibmwatson/developercloud/apis/dialog-apis.html') API Overview
+                a.resource-item(href='http://www.ibm.com/smarterplanet/us/en/ibmwatson/developercloud/dialog.html') Documentation
+                a.resource-item(href='https://github.com/watson-developer-cloud/dialog-tool') Fork on Github
       block row-content
 
     script(type='text/javascript', src='/js/jquery-1.11.1.min.js')
