@@ -53,12 +53,12 @@ block row-content
     div.dialog-template
       div.col-lg-4.col-md-6.col-xs-12
         div.new-dialog-container.clearfix.dialog-info
+          form(method='post', enctype='multipart/form-data', hidden='true')
+            input(type='file', name='file')
           h3.dialog-name-span.exist-dialog-flow-title
           div.dialog-links(style='visibility:hidden;')
-            //- a.edit(href="javascript:;") edit
-            //- |  | 
-            //- a.replace(href="javascript:;") replace
-            //- |  | 
+            a.replace(href="javascript:;") replace
+            |  | 
             a.delete(href="javascript:;") delete
         div.dialog-loading.new-dialog-container(style='display:none')
           div.text-center.new-dialog-container-loading
