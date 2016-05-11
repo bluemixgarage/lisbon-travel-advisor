@@ -16,6 +16,8 @@
 
 'use strict';
 
+var watsonServices = ['dialog'];
+
 var express = require('express'),
   app = express(),
   request = require('request'),
@@ -34,33 +36,48 @@ try {
   allCredentials = {};
 }
 
-// if bluemix credentials exists, then override local
-var credentials = extend({
-  url: 'https://gateway.watsonplatform.net/dialog/api',
-  username: '<username>',
-  password: '<password>'
-}, bluemix.getServiceCreds('dialog')); // VCAP_SERVICES
 
-if (credentials.url.indexOf('/api') > 0)
-  credentials.url = credentials.url.substring(0, credentials.url.indexOf('/api'));
+// Create proxies for each Watson service
+watsonServices.forEach(function (item) {
+  console.log('-> Processing item: ' + item);
+  // if bluemix credentials exists, then override local
+  var credentials = extend(allCredentials[item], bluemix.getServiceCreds(item)); // VCAP_SERVICES
 
-// HTTP proxy to the API
-app.use('/proxy', function (req, res) {
-  var newUrl = credentials.url + req.url;
-  req.pipe(request({
-    url: newUrl,
-    auth: {
-      user: credentials.username,
-      pass: credentials.password,
-      sendImmediately: true
-    }
-  }, function (error) {
-    if (error)
-      res.status(500).json({
-        code: 500,
-        error: errorMessage
+  var proxyFunc;
+  if (!credentials) {
+    console.warn('No credentials have been found for Watson service "' +
+      item + '" - this service will be unavailable');
+    proxyFunc = function (req, res) {
+      res.status(404).json({
+        code: 404,
+        error: 'No credentials have been set for Watson service "' + item + '"'
       });
-  })).pipe(res);
+    };
+  } else {
+    if (credentials.url.indexOf('/api') > 0) {
+      credentials.url = credentials.url.substring(0, credentials.url.indexOf('/api'));
+    }
+    proxyFunc = function (req, res) {
+      var newUrl = credentials.url + req.url;
+      req.pipe(request({
+        url: newUrl,
+        auth: {
+          user: credentials.username,
+          pass: credentials.password,
+          sendImmediately: true
+        }
+      }, function (error) {
+        if (error)
+          res.status(500).json({
+            code: 500,
+            error: errorMessage
+          });
+      })).pipe(res);
+    }
+  }
+
+  // HTTP proxy to the API
+  app.use('/proxy/' + item, proxyFunc);
 });
 
 // render index page
@@ -80,7 +97,7 @@ app.use(function (req, res, next) {
 var errorMessage = 'There was a problem with the request, please try again';
 
 // non 404 error handler
-app.use(function (err, req, res, next) {
+app.use(function (err, req, res) {
   var error = {
     code: err.code || 500,
     error: err.message || err.error || errorMessage

@@ -16,8 +16,8 @@
 
 'use strict';
 
-$(document).ready(function() {
-  var context = '/proxy/api';
+$(document).ready(function () {
+  var context = '/proxy/dialog/api';
   var dialogs = [];
   var conversation = {};
 
@@ -34,93 +34,99 @@ $(document).ready(function() {
   var $profile = $('.profile-container');
   var $userInput = $('.user-input');
 
-  var getErrorMessageFromResponse = function(response){
-    try{
-      if(!response.responseText) return ''
-      var errorObject = JSON.parse(response.responseText)
-      if(!errorObject.error) return ''
-      return errorObject.error
-    }catch(e){
-      if(e instanceof SyntaxError)
-        return ''
-      throw e
+  var getErrorMessageFromResponse = function (response) {
+    try {
+      if (!response.responseText) return '';
+      var errorObject = JSON.parse(response.responseText);
+      if (!errorObject.error) return '';
+      return errorObject.error;
+    } catch (e) {
+      if (e instanceof SyntaxError)
+        return '';
+      throw e;
     }
-  }
+  };
 
   /**
    * Loads the dialog-container
    */
-  var getDialogs = function() {
+  var getDialogs = function () {
     $dialogs.empty();
     $dialogsLoading.show();
     $dialogsError.hide();
 
     $.get(context + '/v1/dialogs')
-    .done(function(data) {
-      if (data === '')
-        return;
-      dialogs = data.dialogs;
-      dialogs.forEach(function(dialog, index) {
-        createDialogTemplate(dialog, index).appendTo($dialogs);
-       });
-    }).fail(function(response) {
-      var errorText = getErrorMessageFromResponse(response)
-      $dialogsError.show();
-      $dialogsError.find('.errorMsg').html('Error getting the dialogs' + (errorText?': '+errorText:'.'));
-    })
-    .always(function(){
-      $dialogsLoading.hide();
-    });
+      .done(function (data) {
+        if (data === '')
+          return;
+        dialogs = data.dialogs;
+        dialogs.forEach(function (dialog, index) {
+          createDialogTemplate(dialog, index).appendTo($dialogs);
+        });
+      }).fail(function (response) {
+        var errorText = getErrorMessageFromResponse(response);
+        $dialogsError.show();
+        $dialogsError
+          .find('.errorMsg')
+          .html('Error getting the dialogs' + (errorText ? ': ' + errorText : '.'));
+      })
+      .always(function () {
+        $dialogsLoading.hide();
+      });
   };
   // initial load
   getDialogs();
 
-  var startConversation = function(index) {
+  var startConversation = function (index) {
     var dialog = dialogs[index];
 
     $conversation.empty();
     $conversationDiv.show();
 
-    var $dialogTemplate =  $('*[data-index="'+index+'"]');
+    var $dialogTemplate = $('*[data-index="' + index + '"]');
     $dialogTemplate.find('.new-dialog-container').hide();
     $dialogTemplate.find('.dialog-loading').show();
 
-    $.post(context + '/v1/dialogs/' + dialog.dialog_id + '/conversation', {input: ''})
-    .done(function(data) {
-      $conversation.empty();
-      $information.empty();
-      $dialogTemplate.find('.new-dialog-container').show();
-      $dialogTemplate.find('.dialog-loading').hide();
+    $.post(context + '/v1/dialogs/' + dialog.dialog_id + '/conversation', {
+        input: ''
+      })
+      .done(function (data) {
+        $conversation.empty();
+        $information.empty();
+        $dialogTemplate.find('.new-dialog-container').show();
+        $dialogTemplate.find('.dialog-loading').hide();
 
-      // show the dialogs
-      $('.dialog-selection').animate({height : '0px'}, 500, function() {
-        $('.dialog-selection').hide();
-        $('.dialog-selection-link').show();
-        //scrollToBottom();
+        // show the dialogs
+        $('.dialog-selection').animate({
+          height: '0px'
+        }, 500, function () {
+          $('.dialog-selection').hide();
+          $('.dialog-selection-link').show();
+          //scrollToBottom();
+        });
+
+        // save dialog, client and conversation id
+        conversation.conversation_id = data.conversation_id;
+        conversation.client_id = data.client_id;
+        conversation.dialog_id = dialog.dialog_id;
+        $('<div/>').text('Dialog name: ' + dialog.name).appendTo($information);
+        $('<div/>').text('Dialog id: ' + conversation.dialog_id).appendTo($information);
+        $('<div/>').text('Conversation id: ' + conversation.conversation_id).appendTo($information);
+        $('<div/>').text('Client id: ' + conversation.client_id).appendTo($information);
+
+
+
+        var text = data.response.join('&lt;br/&gt;');
+        $('<p class="chat-watson"/>')
+          .html($('<div/>').html(text).text())
+          .appendTo($conversation);
       });
-
-      // save dialog, client and conversation id
-      conversation.conversation_id = data.conversation_id;
-      conversation.client_id = data.client_id;
-      conversation.dialog_id = dialog.dialog_id;
-      $('<div/>').text('Dialog name: ' + dialog.name).appendTo($information);
-      $('<div/>').text('Dialog id: ' + conversation.dialog_id).appendTo($information);
-      $('<div/>').text('Conversation id: ' + conversation.conversation_id).appendTo($information);
-      $('<div/>').text('Client id: ' + conversation.client_id).appendTo($information);
-
-
-
-      var text = data.response.join('&lt;br/&gt;');
-      $('<p class="chat-watson"/>')
-        .html($('<div/>').html(text).text())
-        .appendTo($conversation);
-    });
   };
 
   /**
    * Converse function
    */
-  var conductConversation = function(){
+  var conductConversation = function () {
     // service path and parameters
     var path = context + '/v1/dialogs/' + conversation.dialog_id + '/conversation';
     var params = {
@@ -137,7 +143,7 @@ $(document).ready(function() {
 
     scrollToBottom();
 
-    $.post(path, params).done(function(data) {
+    $.post(path, params).done(function (data) {
       var text = data.response.join('&lt;br/&gt;');
       $('<p class="chat-watson"/>')
         .html($('<div/>').html(text).text())
@@ -149,62 +155,64 @@ $(document).ready(function() {
   };
 
   $('.input-btn').click(conductConversation);
-  $userInput.keyup(function(event){
-    if(event.keyCode === 13) {
+  $userInput.keyup(function (event) {
+    if (event.keyCode === 13) {
       conductConversation();
     }
   });
 
-  var deleteDialog = function(dialogIndex) {
+  var deleteDialog = function (dialogIndex) {
     var dialog = dialogs[dialogIndex];
     if (!confirm('Are you sure you wish to delete dialog flow: ' + dialog.name)) {
       return;
     }
-    var $dLoading = $('[data-index='+dialogIndex+']').find('.dialog-loading');
-    var $dName = $('[data-index='+dialogIndex+']').find('.dialog-info');
+    var $dLoading = $('[data-index=' + dialogIndex + ']').find('.dialog-loading');
+    var $dName = $('[data-index=' + dialogIndex + ']').find('.dialog-info');
     $dLoading.show();
     $dName.hide();
     $.ajax({
-      type: 'DELETE',
-      url: context + '/v1/dialogs/'+ dialog.dialog_id,
-      dataType: 'html'
-    })
-    .done(function(){
-      setTimeout(getDialogs, 2000);
-    })
-    .fail(function(e){
-      var errorText = getErrorMessageFromResponse(response)
-      $dialogsError.show();
-      $dialogsError.find('.errorMsg').html('Error deleting the dialogs' + (errorText?': '+errorText:'.'));
-      $dialogsError.find('.errorMsg').text('Error  the dialogs.');
-      $dName.show();
-    })
-    .always(function(){
-      $dLoading.hide();
-    });
+        type: 'DELETE',
+        url: context + '/v1/dialogs/' + dialog.dialog_id,
+        dataType: 'html'
+      })
+      .done(function () {
+        setTimeout(getDialogs, 2000);
+      })
+      .fail(function (response) {
+        var errorText = getErrorMessageFromResponse(response);
+        $dialogsError.show();
+        $dialogsError
+          .find('.errorMsg')
+          .html('Error deleting the dialogs' + (errorText ? ': ' + errorText : '.'));
+        $dialogsError.find('.errorMsg').text('Error  the dialogs.');
+        $dName.show();
+      })
+      .always(function () {
+        $dLoading.hide();
+      });
   };
 
-  var getProfile = function() {
+  var getProfile = function () {
     var path = context + '/v1/dialogs/' + conversation.dialog_id + '/profile';
     var params = {
       conversation_id: conversation.conversation_id,
       client_id: conversation.client_id
     };
 
-    $.get(path, params).done(function(data) {
+    $.get(path, params).done(function (data) {
       $profile.empty();
-      data.name_values.forEach(function(par) {
+      data.name_values.forEach(function (par) {
         if (par.value !== '')
           $('<div/>').text(par.name + ': ' + par.value).appendTo($profile);
       });
     });
   };
 
-  var replaceDialog = function(dialogIndex) {
+  /*var replaceDialog = function (dialogIndex) {
     console.log('replace dialog:' + dialogIndex);
-  };
+  };*/
 
-  var createDialog = function() {
+  var createDialog = function () {
     if ($('#name').val() === '' || $('#file').val() === '')
       return;
 
@@ -213,45 +221,49 @@ $(document).ready(function() {
 
     $('.new-dialog-container').removeClass('selected');
     $.ajax({
-      type: 'POST',
-      url: context + '/v1/dialogs',
-      data: new FormData($('.dialog-form')[0]),
-      processData: false,
-      contentType: false
-    }).done(function(){
-      $('.dialog-flow-title').show();
-      $('.new-dialog-flow-content').hide();
-      $('#new-dialog').removeClass('selected');
-      $('#name').val('');
-      $('#file').replaceWith($('#file').val('').clone(true));
-      getDialogs();
-    })
-    .fail(function(response){
-      var errorText = getErrorMessageFromResponse(response)
-      $dialogsError.show();
-      $dialogsError.find('.errorMsg').html('Error creating the dialogs' + (errorText?': '+errorText:'.'));
-    })
-    .always(function(){
-      $('#new-dialog-loading').hide();
-      $('#new-dialog').show();
-    });
+        type: 'POST',
+        url: context + '/v1/dialogs',
+        data: new FormData($('.dialog-form')[0]),
+        processData: false,
+        contentType: false
+      }).done(function () {
+        $('.dialog-flow-title').show();
+        $('.new-dialog-flow-content').hide();
+        $('#new-dialog').removeClass('selected');
+        $('#name').val('');
+        $('#file').replaceWith($('#file').val('').clone(true));
+        getDialogs();
+      })
+      .fail(function (response) {
+        var errorText = getErrorMessageFromResponse(response);
+        $dialogsError.show();
+        $dialogsError
+          .find('.errorMsg')
+          .html('Error creating the dialogs' + (errorText ? ': ' + errorText : '.'));
+      })
+      .always(function () {
+        $('#new-dialog-loading').hide();
+        $('#new-dialog').show();
+      });
   };
 
   $('.create-btn').click(createDialog);
-  $('.dialog-form').on('submit',function(event){
-    event.preventDefault() ;
+  $('.dialog-form').on('submit', function (event) {
+    event.preventDefault();
   });
 
-  var scrollToBottom = function(){
-    $('body, html').animate({ scrollTop: $('body').height() + 'px' });
+  var scrollToBottom = function () {
+    $('body, html').animate({
+      scrollTop: $('body').height() + 'px'
+    });
   };
 
 
   /**
    * show creating a new dialog flow inputs
-  */
-  $('#new-dialog').click(function(){
-    if($('.new-dialog-flow-content').css('display') === 'none'){
+   */
+  $('#new-dialog').click(function () {
+    if ($('.new-dialog-flow-content').css('display') === 'none') {
       $(this).addClass('selected');
       $('.dialog-flow-title').hide();
       $('.new-dialog-flow-content').show();
@@ -264,27 +276,27 @@ $(document).ready(function() {
    * @param  {int} index  the index in the dialog array
    * @return {jQuery DOM element} DOM element that represents a dialog
    */
-  var createDialogTemplate = function(dialog,index) {
+  var createDialogTemplate = function (dialog, index) {
     var $dialogTemplate = $('.dialog-template').last().clone();
 
     // save the index
-    $dialogTemplate.attr('data-index',index);
+    $dialogTemplate.attr('data-index', index);
 
     // dialog name
     $dialogTemplate.find('.dialog-name-span')
       .text(dialog.name);
 
-    $dialogTemplate.click(function(){
-        $dialogTemplate.find('.dialog-loading').show();
-        startConversation(index);
-      });
+    $dialogTemplate.click(function () {
+      $dialogTemplate.find('.dialog-loading').show();
+      startConversation(index);
+    });
 
     // edit
-    $dialogTemplate.find('.edit').click(function(e){
-        e.stopPropagation();
-        $(this).blur();
-        var url = context + '/../ui/designtool/' + dialog.dialog_id;
-        window.open(url, '_blank');
+    $dialogTemplate.find('.edit').click(function (e) {
+      e.stopPropagation();
+      $(this).blur();
+      var url = context + '/../ui/designtool/' + dialog.dialog_id;
+      window.open(url, '_blank');
     });
 
     // // replace
@@ -295,28 +307,30 @@ $(document).ready(function() {
     // });
 
     // delete
-    $dialogTemplate.find('.delete').click(function(e){
-        e.stopPropagation();
-        $(this).blur();
-        deleteDialog(index);
+    $dialogTemplate.find('.delete').click(function (e) {
+      e.stopPropagation();
+      $(this).blur();
+      deleteDialog(index);
     });
 
     // dialog actions
     $dialogTemplate.find('.new-dialog-container')
-    .hover(function(){
-      $dialogTemplate.find('.dialog-links').css('visibility', 'visible');
-    },function(){
-      $dialogTemplate.find('.dialog-links').css('visibility', 'hidden');
-    });
+      .hover(function () {
+        $dialogTemplate.find('.dialog-links').css('visibility', 'visible');
+      }, function () {
+        $dialogTemplate.find('.dialog-links').css('visibility', 'hidden');
+      });
 
     return $dialogTemplate;
   };
 
 
   // show the dialogs
-  $('.dialog-selection-link').click(function(){
+  $('.dialog-selection-link').click(function () {
     var self = this;
-    $('.dialog-selection').animate({height : '100%'}, 0, function() {
+    $('.dialog-selection').animate({
+      height: '100%'
+    }, 0, function () {
       $('.dialog-selection').show();
       $(self).hide();
     });
