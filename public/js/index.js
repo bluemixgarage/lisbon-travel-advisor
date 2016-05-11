@@ -1,5 +1,5 @@
 /**
- * Copyright 2015 IBM Corp. All Rights Reserved.
+ * Copyright 2016 IBM Corp. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not
  * use this file except in compliance with the License. You may obtain a copy of
@@ -114,8 +114,6 @@ $(document).ready(function () {
         $('<div/>').text('Conversation id: ' + conversation.conversation_id).appendTo($information);
         $('<div/>').text('Client id: ' + conversation.client_id).appendTo($information);
 
-
-
         var text = data.response.join('&lt;br/&gt;');
         $('<p class="chat-watson"/>')
           .html($('<div/>').html(text).text())
@@ -144,6 +142,10 @@ $(document).ready(function () {
     scrollToBottom();
 
     $.post(path, params).done(function (data) {
+
+      console.log("-> DATA BELOW:");
+      console.log(data);
+
       var text = data.response.join('&lt;br/&gt;');
       $('<p class="chat-watson"/>')
         .html($('<div/>').html(text).text())
@@ -248,14 +250,14 @@ $(document).ready(function () {
     });
     // Emulate click to upload file
     $fileInput.click();
-  }
+  };
 
   var updateDialogXML = function (dialogIndex) {
-    console.log('UPDATE DIALOG XML FOR INDEX ' + dialogIndex);
-
     var dialog = dialogs[dialogIndex];
     var $dLoading = $('[data-index=' + dialogIndex + ']').find('.dialog-loading');
     var $dName = $('[data-index=' + dialogIndex + ']').find('.dialog-info');
+    var $fileInput = $('[data-index=' + dialogIndex + ']').find('input');
+
     $dLoading.show();
     $dName.hide();
 
@@ -266,6 +268,12 @@ $(document).ready(function () {
         processData: false,
         contentType: false
       })
+      .done(function () {
+        // Restart dialog if needed
+        if (conversation.dialog_id === dialog.dialog_id) {
+          startConversation(dialogIndex);
+        }
+      })
       .fail(function (response) {
         var errorText = getErrorMessageFromResponse(response);
         $dialogsError.show();
@@ -274,6 +282,7 @@ $(document).ready(function () {
           .html('Error creating the dialogs' + (errorText ? ': ' + errorText : '.'));
       })
       .always(function () {
+        $fileInput.val('');
         $dLoading.hide();
         $dName.show();
       });
@@ -334,8 +343,10 @@ $(document).ready(function () {
     // Hidden file input for replace / update
     var $fileInput = $dialogTemplate.find('input');
     $fileInput.change(function () {
-      updateDialogXML(index);
-    })
+      if ($(this).val() !== '') {
+        updateDialogXML(index);
+      }
+    });
 
     // delete
     $dialogTemplate.find('.delete').click(function (e) {
