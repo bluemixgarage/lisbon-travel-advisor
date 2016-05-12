@@ -292,6 +292,18 @@ $(document).ready(function () {
       });
   };
 
+  $('#cancel-upload').click(function (event) {
+    event.preventDefault();
+    event.stopPropagation();
+    if ($('.new-dialog-flow-content').css('display') !== 'none') {
+      console.log("should hide!");
+      $('.new-dialog-flow-content').hide();
+      $('.dialog-flow-title').show();
+      $('.new-dialog-flow-content').hide();
+    }
+  });
+
+
   $('.create-btn').click(createDialog);
   $('.dialog-form').on('submit', function (event) {
     event.preventDefault();
