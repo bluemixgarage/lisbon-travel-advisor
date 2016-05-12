@@ -96,15 +96,6 @@ $(document).ready(function () {
         $dialogTemplate.find('.new-dialog-container').show();
         $dialogTemplate.find('.dialog-loading').hide();
 
-        // show the dialogs
-        $('.dialog-selection').animate({
-          height: '0px'
-        }, 500, function () {
-          $('.dialog-selection').hide();
-          $('.dialog-selection-link').show();
-          //scrollToBottom();
-        });
-
         // save dialog, client and conversation id
         conversation.conversation_id = data.conversation_id;
         conversation.client_id = data.client_id;
@@ -296,13 +287,11 @@ $(document).ready(function () {
     event.preventDefault();
     event.stopPropagation();
     if ($('.new-dialog-flow-content').css('display') !== 'none') {
-      console.log("should hide!");
       $('.new-dialog-flow-content').hide();
       $('.dialog-flow-title').show();
       $('.new-dialog-flow-content').hide();
     }
   });
-
 
   $('.create-btn').click(createDialog);
   $('.dialog-form').on('submit', function (event) {
@@ -388,16 +377,4 @@ $(document).ready(function () {
 
     return $dialogTemplate;
   };
-
-
-  // show the dialogs
-  $('.dialog-selection-link').click(function () {
-    var self = this;
-    $('.dialog-selection').animate({
-      height: '100%'
-    }, 0, function () {
-      $('.dialog-selection').show();
-      $(self).hide();
-    });
-  });
 });
