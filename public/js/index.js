@@ -142,9 +142,13 @@ $(document).ready(function () {
     scrollToBottom();
 
     $.post(path, params).done(function (data) {
-
-      console.log("-> DATA BELOW:");
       console.log(data);
+
+      // Check if confidence is 0 (=with default being invoked)
+      if (data.response.confidence === 0) {
+
+        return;
+      }
 
       var text = data.response.join('&lt;br/&gt;');
       $('<p class="chat-watson"/>')
