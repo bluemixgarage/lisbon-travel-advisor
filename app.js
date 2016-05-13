@@ -16,7 +16,7 @@
 
 'use strict';
 
-var watsonServices = ['dialog', 'speech_to_text'];
+var watsonServices = ['dialog', 'text_to_speech'];
 
 var express = require('express'),
   app = express(),
@@ -54,11 +54,10 @@ watsonServices.forEach(function (item) {
       });
     };
   } else {
-    if (credentials.url.indexOf('/api') > 0) {
-      credentials.url = credentials.url.substring(0, credentials.url.indexOf('/api'));
-    }
     proxyFunc = function (req, res) {
       var newUrl = credentials.url + req.url;
+      console.log('Proxy function invoked for ' + item + ' on ' + newUrl);
+
       req.pipe(request({
         url: newUrl,
         auth: {
@@ -67,17 +66,27 @@ watsonServices.forEach(function (item) {
           sendImmediately: true
         }
       }, function (error) {
-        if (error)
-          res.status(500).json({
-            code: 500,
-            error: errorMessage
-          });
+        if (error || res.statusCode < 200 || res.statusCode >= 400) {
+          console.error('An error occurred while invoking Watson service ' + item + ': ');
+          if (error) {
+            console.error(error);
+            res.status(500).json({
+              code: 500,
+              error: errorMessage
+            });
+          } else {
+            console.error(res.statusMessage);
+          }
+
+        }
       })).pipe(res);
     }
   }
 
   // HTTP proxy to the API
-  app.use('/proxy/' + item, proxyFunc);
+  var proxyURL = '/proxy/' + item;
+  app.use(proxyURL, proxyFunc);
+  console.log('Registered URL: ' + proxyURL);
 });
 
 // render index page

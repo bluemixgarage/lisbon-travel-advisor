@@ -17,7 +17,9 @@
 'use strict';
 
 $(document).ready(function () {
-  var context = '/proxy/dialog/api';
+  var dialogContext = '/proxy/dialog';
+  var ttsContext = '/proxy/text_to_speech';
+
   var dialogs = [];
   var conversation = {};
 
@@ -55,7 +57,7 @@ $(document).ready(function () {
     $dialogsLoading.show();
     $dialogsError.hide();
 
-    $.get(context + '/v1/dialogs')
+    $.get(dialogContext + '/v1/dialogs')
       .done(function (data) {
         if (data === '')
           return;
@@ -87,7 +89,7 @@ $(document).ready(function () {
     $dialogTemplate.find('.new-dialog-container').hide();
     $dialogTemplate.find('.dialog-loading').show();
 
-    $.post(context + '/v1/dialogs/' + dialog.dialog_id + '/conversation', {
+    $.post(dialogContext + '/v1/dialogs/' + dialog.dialog_id + '/conversation', {
         input: ''
       })
       .done(function (data) {
@@ -117,7 +119,7 @@ $(document).ready(function () {
    */
   var conductConversation = function () {
     // service path and parameters
-    var path = context + '/v1/dialogs/' + conversation.dialog_id + '/conversation';
+    var path = dialogContext + '/v1/dialogs/' + conversation.dialog_id + '/conversation';
     var params = {
       input: $userInput.val(),
       conversation_id: conversation.conversation_id,
@@ -136,12 +138,19 @@ $(document).ready(function () {
       console.log(data);
 
       // Check if confidence is 0 (=with default being invoked)
-      if (data.response.confidence === 0) {
-
-        return;
-      }
+      if (data.response.confidence === 0) {}
 
       var text = data.response.join('&lt;br/&gt;');
+
+      // Synthesize response
+      $.get(ttsContext + '/v1/synthesize', {
+        "voice": "en-US_AllisonVoice",
+        "text": "Hello"
+      }).done(function (data) {
+        console.log("YOUPI!");
+        console.log(data);
+      });
+
       $('<p class="chat-watson"/>')
         .html($('<div/>').html(text).text())
         .appendTo($conversation);
@@ -166,7 +175,7 @@ $(document).ready(function () {
     $dName.hide();
     $.ajax({
         type: 'DELETE',
-        url: context + '/v1/dialogs/' + dialog.dialog_id,
+        url: dialogContext + '/v1/dialogs/' + dialog.dialog_id,
         dataType: 'html'
       })
       .done(function () {
@@ -187,7 +196,7 @@ $(document).ready(function () {
   };
 
   var getProfile = function () {
-    var path = context + '/v1/dialogs/' + conversation.dialog_id + '/profile';
+    var path = dialogContext + '/v1/dialogs/' + conversation.dialog_id + '/profile';
     var params = {
       conversation_id: conversation.conversation_id,
       client_id: conversation.client_id
@@ -212,7 +221,7 @@ $(document).ready(function () {
     $('.new-dialog-container').removeClass('selected');
     $.ajax({
         type: 'POST',
-        url: context + '/v1/dialogs',
+        url: dialogContext + '/v1/dialogs',
         data: new FormData($('.dialog-form')[0]),
         processData: false,
         contentType: false
@@ -258,7 +267,7 @@ $(document).ready(function () {
 
     $.ajax({
         type: 'PUT',
-        url: context + '/v1/dialogs/' + dialog.dialog_id,
+        url: dialogContext + '/v1/dialogs/' + dialog.dialog_id,
         data: new FormData($('[data-index=' + dialogIndex + ']').find('form')[0]),
         processData: false,
         contentType: false
@@ -341,7 +350,7 @@ $(document).ready(function () {
     $dialogTemplate.find('.edit').click(function (e) {
       e.stopPropagation();
       $(this).blur();
-      var url = context + '/../ui/designtool/' + dialog.dialog_id;
+      var url = dialogContext + '/../ui/designtool/' + dialog.dialog_id;
       window.open(url, '_blank');
     });
 
