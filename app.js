@@ -16,7 +16,7 @@
 
 'use strict';
 
-var watsonServices = ['dialog'];
+var watsonServices = ['dialog', 'speech_to_text'];
 
 var express = require('express'),
   app = express(),
