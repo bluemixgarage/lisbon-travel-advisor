@@ -77,7 +77,9 @@ watsonServices.forEach(function (item) {
           } else {
             console.error(res.statusMessage);
           }
-
+        }
+        if (req.query.download) {
+          res.headers['content-disposition'] = 'attachment; filename=transcript.ogg';
         }
       })).pipe(res);
     }

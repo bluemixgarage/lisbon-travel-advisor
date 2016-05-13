@@ -143,13 +143,35 @@ $(document).ready(function () {
       var text = data.response.join('&lt;br/&gt;');
 
       // Synthesize response
-      $.get(ttsContext + '/v1/synthesize', {
+      var urlEncodedText = encodeURI(text);
+      var howl = new Howl({
+        urls: [ttsContext + '/v1/synthesize?voice=en-US_AllisonVoice&text=' + urlEncodedText],
+        buffer: true,
+        format: 'ogg',
+        onplay: function () {
+          console.log('Playing!');
+        },
+        onload: function () {
+          console.log('loading!');
+        },
+        onloaderror: function (e) {
+          console.log('error!');
+          console.log(e);
+        }
+      });
+      howl.play();
+
+
+      /*$.get(ttsContext + '/v1/synthesize', {
         "voice": "en-US_AllisonVoice",
         "text": "Hello"
       }).done(function (data) {
+        var sound = new Howl({
+          urls: ['sound.mp3']
+        }).play();
         console.log("YOUPI!");
         console.log(data);
-      });
+      }); */
 
       $('<p class="chat-watson"/>')
         .html($('<div/>').html(text).text())
